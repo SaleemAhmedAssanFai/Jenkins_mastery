@@ -27,7 +27,7 @@ Jenkins_mastery/
 
 | # | Topic | Status |
 |---|---|---|
-| 1 | [Build Triggers](./build%20triggers/README.md) | ✅ Complete |
+| 1 | [Build Triggers](<./build triggers/README.md>) | ✅ Complete |
 | 2 | Variables in Jenkins | 🔄 Coming Soon |
 | 3 | Build Environments | 🔄 Coming Soon |
 | 4 | Build Pipeline | 🔄 Coming Soon |
