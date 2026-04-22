@@ -25,7 +25,10 @@ Jenkins_mastery/
 │   ├── Build trigger.png
 │   ├── trigger builds remotely.png
 │   └── README.md
-├── variables in jenkins/         🔄 Coming Soon
+├── variables in jenkins/
+│   ├── environment_variables.png
+│   ├── global_variables.png
+│   └── README.md
 ├── build environments/           🔄 Coming Soon
 ├── build pipeline/               🔄 Coming Soon
 ├── deploy artifacts to tomcat/   🔄 Coming Soon
@@ -40,7 +43,7 @@ Jenkins_mastery/
 | # | Topic | Status |
 |---|---|---|
 | 1 | [Build Triggers](<./build triggers/README.md>) | ✅ Complete |
-| 2 | Variables in Jenkins | 🔄 Coming Soon |
+| 2 | [Variables in Jenkins](<./variables in jenkins/README.md>) | ✅ Complete |
 | 3 | Build Environments | 🔄 Coming Soon |
 | 4 | Build Pipeline | 🔄 Coming Soon |
 | 5 | Deploy Artifacts to Tomcat Server | 🔄 Coming Soon |
@@ -174,60 +177,60 @@ tool. This makes it a powerful integration point for automation.
 ---
 
 ## 🔧 Variables in Jenkins
- 
+
 Variables in Jenkins allow jobs to use dynamic values instead of
 hardcoding information directly into build scripts. Jenkins supports two
 types of variables, each with a different scope:
- 
+
 | Type | Scope | Defined In |
 |---|---|---|
 | **Environment Variables** | The job they are configured in only | Job → Configure → Environment |
 | **Global Variables** | All jobs across the entire Jenkins instance | Manage Jenkins → System → Global Properties |
- 
+
 ---
- 
+
 ### Part 1 — Environment Variables
- 
+
 Environment variables in Jenkins are scoped to the **job they are defined
 in**. They are not accessible by any other job. Jenkins also provides a
 set of built-in environment variables that are automatically available in
 every job — values like `BUILD_ID` and `JOB_NAME` that Jenkins injects
 at build time without any extra configuration.
- 
+
 **Step 1: Create a New Job**
- 
+
 Created a new Freestyle job to demonstrate environment variables:
- 
+
 > Jenkins Dashboard → New Item → Enter job name → Freestyle Project → OK
- 
+
 **Step 2: Navigate to the Environment Section**
- 
+
 Inside the job configuration, clicked **Environment** in the left sidebar:
- 
+
 > Job → Configure → Environment
- 
+
 **Step 3: Add an Execute Shell Build Step**
- 
+
 Scrolled down to **Build Steps** and clicked:
- 
+
 > Add build step → Execute shell
- 
+
 **Step 4: View Available Environment Variables**
- 
+
 Inside the **Command** field, Jenkins displays a link:
- 
+
 > 📎 *See the list of available environment variables*
- 
+
 Clicking that link opens a full reference of all built-in variables Jenkins
 provides for every build — things like `BUILD_ID`, `JOB_NAME`, `WORKSPACE`,
 `BUILD_URL`, and more. These can be used directly in any shell command
 without defining them first.
- 
+
 **Step 5: Write a Shell Script Using Environment Variables**
- 
+
 In the **Command** field, wrote a script that mixes locally declared
 variables with Jenkins built-in environment variables:
- 
+
 ```bash
 B=40
 echo "The Value of A is ${A}"
@@ -237,14 +240,14 @@ echo "My name is ${Name} Ahmed."
 echo "My build id is ${BUILD_ID}"
 echo "The job name is ${JOB_NAME}"
 ```
- 
+
 > 📸 *Screenshot: Execute shell command field showing environment variables
 > in use — local declarations alongside built-in Jenkins variables*
- 
+
 ![Environment Variables](variables%20in%20jenkins/environment_variables.png)
- 
+
 Breaking down each line:
- 
+
 | Line | Description |
 |---|---|
 | `B=40` | Locally declared variable — scoped to this shell step |
@@ -254,107 +257,107 @@ Breaking down each line:
 | `echo "My name is ${Name} Ahmed."` | Prints `My name is Saleem Ahmed.` |
 | `echo "My build id is ${BUILD_ID}"` | Built-in Jenkins variable — auto-injected each build |
 | `echo "The job name is ${JOB_NAME}"` | Built-in Jenkins variable — resolves to the job's name |
- 
+
 Clicked **Save** to apply.
- 
+
 **Result:** When the build ran, Jenkins resolved every variable and printed
 the values in the Console Output. `${BUILD_ID}` and `${JOB_NAME}` were
 populated automatically by Jenkins — no manual setup required.
- 
+
 ---
- 
+
 ### Part 2 — Global Variables
- 
+
 Global variables are defined at the **Jenkins system level** and are
 available to **every job and pipeline** on the instance. They are ideal
 for values that multiple jobs need to share — such as a server URL, a
 tool path, or a deployment target — defined once and reused everywhere.
- 
+
 **Step 1: Open Manage Jenkins**
- 
+
 From the Jenkins Dashboard, clicked:
- 
+
 > Jenkins Dashboard → Manage Jenkins
- 
+
 **Step 2: Select System**
- 
+
 Under the **System Configuration** section, clicked:
- 
+
 > System
- 
+
 **Step 3: Scroll Down to Global Properties**
- 
+
 Scrolled down the System configuration page until reaching the
 **Global properties** section. Checked the box:
- 
+
 > ✅ Environment variables
- 
+
 This expanded the section to reveal **Name** and **Value** input fields.
- 
+
 **Step 4: Declare the Global Variable**
- 
+
 Clicked **Add** and entered a name and value for the new global variable:
- 
+
 | Field | Value |
 |---|---|
 | Name | *(your variable name)* |
 | Value | *(your variable value)* |
- 
+
 > 📸 *Screenshot: Global properties — Environment variables section with
 > a custom global variable declared*
- 
+
 ![Global Variables](variables%20in%20jenkins/global_variables.png)
- 
+
 **Step 5: Save and Apply**
- 
+
 Clicked **Save**. The global variable is now registered across the entire
 Jenkins instance.
- 
+
 **Result:** Any job — existing or new — can now reference this variable
 in its build steps using `${VARIABLE_NAME}`, exactly like a built-in
 environment variable, without needing to declare it inside the job itself.
- 
+
 ---
- 
+
 ## 🔑 Key Lessons Learned (Variables)
- 
+
 **1. Environment Variables Are Job-Scoped**
- 
+
 Variables defined inside a job's Environment or Execute shell step exist
 only for that job's build. They cannot be read by any other job and are
 reset on every new build run.
- 
+
 **2. Global Variables Are Instance-Wide**
- 
+
 A global variable defined in Manage Jenkins → System → Global Properties
 is available to every single job on the Jenkins server. Change the value
 once and every job that references it picks up the new value on its next
 build — no job-level changes needed.
- 
+
 **3. Jenkins Built-in Variables Require No Setup**
- 
+
 `${BUILD_ID}`, `${JOB_NAME}`, `${WORKSPACE}`, and all other built-in
 variables are injected by Jenkins automatically into every build. They
 can be referenced directly in any shell command or pipeline script.
- 
+
 **4. The Variable List Link Is Your Reference**
- 
+
 The *"See the list of available environment variables"* link inside the
 Execute shell command field opens a live, version-specific reference of
 every built-in variable Jenkins provides. Always check it before writing
 a new script.
- 
+
 **5. Undefined Variables Print Empty — Not an Error**
- 
+
 If a variable is referenced but not declared or passed in, Jenkins
 resolves it to an empty string rather than throwing an error. Always
 verify that every variable a script depends on has been defined at the
 appropriate scope before the build runs.
- 
+
 ---
- 
+
 ## 🛠️ Tools & Environment
- 
+
 | Tool | Purpose |
 |---|---|
 | Jenkins | CI/CD automation server (localhost:8080) |
@@ -362,11 +365,11 @@ appropriate scope before the build runs.
 | Tomcat | Application server for deployments |
 | Groovy | Declarative pipeline scripting |
 | Git | Version control |
- 
+
 ---
- 
+
 ## 📌 Project Status
- 
+
 ✅ Build Triggers — Trigger Builds Remotely documented  
 ✅ Variables in Jenkins — Environment Variables and Global Variables documented  
 ⬜ Build Environments  
@@ -374,10 +377,9 @@ appropriate scope before the build runs.
 ⬜ Deploy Artifacts to Tomcat Server  
 ⬜ Deploy Build to Tomcat Server using Jenkins  
 ⬜ Declarative Pipeline  
- 
+
 ---
- 
+
 ## 🔗 Connect
- 
+
 [LinkedIn](https://www.linkedin.com/in/saleemfai) · 📍 Cameroon
- 
