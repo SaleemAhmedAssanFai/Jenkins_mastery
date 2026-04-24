@@ -44,7 +44,7 @@ Jenkins_mastery/
 |---|---|---|
 | 1 | [Build Triggers](<./build triggers/README.md>) | ✅ Complete |
 | 2 | [Variables in Jenkins](<./variables in jenkins/README.md>) | ✅ Complete |
-| 3 | [Build Environments](<./Build Environments/README.md>) | 🔄 Coming Soon |
+| 3 | [Build Environments](<./Build Environments/README.md>) |  ✅ Complete |
 | 4 | Build Pipeline | 🔄 Coming Soon |
 | 5 | Deploy Artifacts to Tomcat Server | 🔄 Coming Soon |
 | 6 | Deploy Build to Tomcat Server using Jenkins | 🔄 Coming Soon |
