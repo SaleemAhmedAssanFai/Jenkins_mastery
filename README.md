@@ -29,7 +29,7 @@ Jenkins_mastery/
 │   ├── environment_variables.png
 │   ├── global_variables.png
 │   └── README.md
-├── build environments/           🔄 Coming Soon
+├── build environments/           
 ├── build pipeline/               🔄 Coming Soon
 ├── deploy artifacts to tomcat/   🔄 Coming Soon
 ├── deploy build to tomcat/       🔄 Coming Soon
@@ -44,7 +44,7 @@ Jenkins_mastery/
 |---|---|---|
 | 1 | [Build Triggers](<./build triggers/README.md>) | ✅ Complete |
 | 2 | [Variables in Jenkins](<./variables in jenkins/README.md>) | ✅ Complete |
-| 3 | Build Environments | 🔄 Coming Soon |
+| 3 | [Build Environments](<./Build Environments/README.md>) | 🔄 Coming Soon |
 | 4 | Build Pipeline | 🔄 Coming Soon |
 | 5 | Deploy Artifacts to Tomcat Server | 🔄 Coming Soon |
 | 6 | Deploy Build to Tomcat Server using Jenkins | 🔄 Coming Soon |
