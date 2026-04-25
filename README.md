@@ -29,7 +29,14 @@ Jenkins_mastery/
 │   ├── environment_variables.png
 │   ├── global_variables.png
 │   └── README.md
-├── build environments/           🔄 Coming Soon
+├── build_environments/
+│   ├── build_timeout.png
+│   ├── choice_and_multiline_parameters.png
+│   ├── parametized_job.png
+│   ├── parametized_job_output.png
+│   ├── timestamp_jenkins.png
+│   ├── timestamp_output.png
+│   └── README.md
 ├── build pipeline/               🔄 Coming Soon
 ├── deploy artifacts to tomcat/   🔄 Coming Soon
 ├── deploy build to tomcat/       🔄 Coming Soon
@@ -44,7 +51,7 @@ Jenkins_mastery/
 |---|---|---|
 | 1 | [Build Triggers](<./build triggers/README.md>) | ✅ Complete |
 | 2 | [Variables in Jenkins](<./variables in jenkins/README.md>) | ✅ Complete |
-| 3 | Build Environments | 🔄 Coming Soon |
+| 3 | [Build Environments](<./build_environments/README.md>) | ✅ Complete |
 | 4 | Build Pipeline | 🔄 Coming Soon |
 | 5 | Deploy Artifacts to Tomcat Server | 🔄 Coming Soon |
 | 6 | Deploy Build to Tomcat Server using Jenkins | 🔄 Coming Soon |
@@ -356,74 +363,73 @@ appropriate scope before the build runs.
 
 ---
 
----
- 
 ## 🏗️ Build Environments
- 
+
 The Build Environment section in Jenkins provides options that control
 **how a job behaves during its execution** — beyond just running the
 build steps. This is where you configure things like timestamps on console
 output, build timeout limits, and parametrized inputs that make a job
 dynamic and reusable.
- 
+
 To access Build Environment options in any Jenkins job:
 > **Job → Configure → Environment**
- 
+
 The labs in this section cover three key build environment features:
- 
+
 - **Add timestamps to the Console Output** — prefix every console line
   with the exact time it ran
 - **Terminate a build if it's stuck** — automatically abort a build that
   exceeds a time limit
 - **Build Parameters** — pass dynamic inputs into a job at trigger time
   using String, Choice, and Multi-line String parameters
+
 ---
- 
+
 ### Part 1 — Add Timestamps to the Console Output
- 
+
 Timestamps add the exact clock time next to every line printed in the
 Console Output. This makes it easy to see how long each step took,
 identify slow steps, and correlate log output with real-world events.
- 
+
 **Step 1: Create the Job**
- 
+
 Created a new Freestyle job called `timestamp_demo`:
- 
+
 > Jenkins Dashboard → New Item → Enter name: `timestamp_demo` → Freestyle Project → OK
- 
+
 **Step 2: Enable Timestamps**
- 
+
 Inside `timestamp_demo → Configure → Environment`, checked the option:
- 
+
 > ✅ Add timestamps to the Console Output
- 
+
 **Step 3: Add a Build Step**
- 
+
 Under **Build Steps**, added an Execute shell step with the following
 command:
- 
+
 ```bash
 echo "jenkins is easy to learn"
 sleep 5
 echo "happy learning"
 ```
- 
+
 The `sleep 5` pauses the build for 5 seconds between the two echo
 statements — making the timestamps clearly show the time difference
 between steps.
- 
+
 > 📸 *Screenshot: `timestamp_demo` Environment section with timestamps
 > enabled and the shell command configured*
- 
-![Timestamp Jenkins](build%20environments/timestamp_jenkins.png)
- 
+
+![Timestamp Jenkins](build_environments/timestamp_jenkins.png)
+
 Clicked **Save** and then **Build Now**.
- 
+
 **Step 4: Verify the Console Output**
- 
+
 In the **Console Output** for Build **#1**, every line was prefixed with
 the exact system clock time:
- 
+
 ```
 14:57:56 Started by user Saleem Ahmed
 14:57:56 Running as SYSTEM
@@ -436,133 +442,133 @@ the exact system clock time:
 14:58:02 happy learning
 14:58:02 Finished: SUCCESS
 ```
- 
+
 > 📸 *Screenshot: `timestamp_demo` Build #1 Console Output — every line
 > prefixed with the system clock time, sleep 5 visible between steps*
- 
-![Timestamp Output](build%20environments/timestamp_output.png)
- 
+
+![Timestamp Output](build_environments/timestamp_output.png)
+
 **Result:** The timestamps clearly show that `sleep 5` caused a 5-second
 gap between `14:57:57` and `14:58:02` — exactly as expected. The entire
 build from start to finish took 6 seconds.
- 
+
 ---
- 
+
 ### Part 2 — Terminate a Build if It's Stuck (Build Timeout)
- 
+
 The **Terminate a build if it's stuck** option automatically aborts a
 build that runs longer than a defined time limit. This prevents runaway
 builds from blocking the executor indefinitely — for example, a build
 step that hangs waiting on a network resource or a process that never exits.
- 
+
 **Step 1: Create the Job**
- 
+
 Created a new Freestyle job called `timeout_job`:
- 
+
 > Jenkins Dashboard → New Item → Enter name: `timeout_job` → Freestyle Project → OK
- 
+
 **Step 2: Enable Build Timeout**
- 
+
 Inside `timeout_job → Configure → Environment`, checked the option:
- 
+
 > ✅ Terminate a build if it's stuck
- 
+
 This expanded the timeout configuration section with three fields:
- 
+
 | Field | Value Set | Description |
 |---|---|---|
 | **Time-out strategy** | `Absolute` | Aborts after a fixed number of minutes regardless of activity |
 | **Timeout minutes** | `3` | The build will be forcefully terminated after 3 minutes |
 | **Time-out actions** | `Fail the build` | Jenkins marks the build as FAILED when the timeout is reached |
- 
+
 **Step 3: Add a Build Step Designed to Time Out**
- 
+
 Under **Build Steps**, added an Execute shell step:
- 
+
 ```bash
 echo "hello how are you"
 sleep 240
 ```
- 
+
 The `sleep 240` command pauses the build for 240 seconds (4 minutes) —
 deliberately exceeding the 3-minute timeout to trigger the abort.
- 
+
 > 📸 *Screenshot: `timeout_job` Environment section — Terminate a build
 > if it's stuck enabled, Absolute strategy, 3 minute timeout, Fail the
 > build action*
- 
-![Build Timeout](build%20environments/build_timeout.png)
- 
+
+![Build Timeout](build_environments/build_timeout.png)
+
 Clicked **Save** and then **Build Now**.
- 
+
 **Result:** Jenkins started the build, printed `hello how are you`, then
 waited on `sleep 240`. After exactly 3 minutes, Jenkins detected that
 the build had exceeded its timeout, forcefully terminated it, and marked
 the build as **FAILED** — without any manual intervention.
- 
+
 ---
- 
+
 ### Part 3 — Build Parameters
- 
+
 Build Parameters make a job **dynamic** — instead of hardcoding values
 into the build configuration, parameters let you pass different inputs
 each time the job is triggered. Jenkins supports several parameter types.
 Three are demonstrated in this lab: **String**, **Choice**, and
 **Multi-line String**.
- 
+
 To access Build Parameters in any Jenkins job:
 > **Job → Configure → General → ✅ This project is parameterized**
- 
+
 ---
- 
+
 #### String Parameter
- 
+
 A String Parameter accepts a single line of free-text input. It is the
 most common parameter type — used for names, version numbers, branch
 names, usernames, or any single value that changes between builds.
- 
+
 **Step 1: Create the Job**
- 
+
 Created a new Freestyle job called `parametized_demo`:
- 
+
 > Jenkins Dashboard → New Item → Enter name: `parametized_demo` → Freestyle Project → OK
- 
+
 **Step 2: Enable Parameterization**
- 
+
 Inside `parametized_demo → Configure → General`, checked the option:
- 
+
 > ✅ This project is parameterized
- 
+
 **Step 3: Add a String Parameter**
- 
+
 Clicked **Add Parameter → String Parameter** and filled in:
- 
+
 | Field | Value |
 |---|---|
 | Name | `Name` |
 | Default Value | `Saleem` |
- 
+
 > 📸 *Screenshot: `parametized_demo` — This project is parameterized
 > checked, String Parameter `Name` with default value `Saleem`*
- 
-![Parametized Job](build%20environments/parametized_job.png)
- 
+
+![Parametized Job](build_environments/parametized_job.png)
+
 **Step 4: Add a Build Step**
- 
+
 Under **Build Steps**, added an Execute shell step:
- 
+
 ```bash
 echo Hello how are you
 echo My name is ${Name}
 ```
- 
+
 Clicked **Save** and triggered the build using **Build with Parameters**.
 The `Name` field was pre-filled with `Saleem` and left unchanged.
- 
+
 **Step 5: Verify the Console Output**
- 
+
 In the **Console Output** for Build **#1**:
- 
+
 ```
 Started by user Saleem Ahmed
 Running as SYSTEM
@@ -574,114 +580,114 @@ Hello how are you
 My name is Saleem
 Finished: SUCCESS
 ```
- 
+
 > 📸 *Screenshot: `parametized_demo` Build #1 Console Output — `${Name}`
 > resolved to `Saleem`, build finished with SUCCESS*
- 
-![Parametized Job Output](build%20environments/parametized_job_output.png)
- 
+
+![Parametized Job Output](build_environments/parametized_job_output.png)
+
 **Result:** Jenkins injected the `Name` parameter as an environment
 variable, `${Name}` resolved to `Saleem` in the shell step, and the
 build completed successfully.
- 
+
 ---
- 
+
 #### Choice Parameter and Multi-line String Parameter
- 
+
 More complex parameter types give greater control over what values a user
 can pass into a build.
- 
+
 **Choice Parameter** presents a dropdown menu of predefined options. The
 user selects one value at trigger time — preventing free-text mistakes and
 restricting inputs to only valid choices. Ideal for environment selectors,
 region selectors, or any field with a known set of valid values.
- 
+
 **Multi-line String Parameter** accepts a block of text spanning multiple
 lines. Useful for passing notes, messages, lists of items, or any input
 that cannot fit on a single line.
- 
+
 **Step 5: Add a Choice Parameter**
- 
+
 Still inside `parametized_demo → Configure → General`, clicked
 **Add Parameter → Choice Parameter** and filled in:
- 
+
 | Field | Value |
 |---|---|
 | Name | `environment` |
 | Choices | `test` / `QA` / `Preprod` *(one per line)* |
- 
+
 This creates a dropdown that the user selects from when triggering the
 build — choosing which environment to target.
- 
+
 **Step 6: Add a Multi-line String Parameter**
- 
+
 Clicked **Add Parameter → Multi-line String Parameter** and filled in:
- 
+
 | Field | Value |
 |---|---|
 | Name | `Mutiline` |
 | Default Value | `This is my online Class` / `Hope you are doing well` / `feel free to ask any questions you may have` |
- 
+
 > 📸 *Screenshot: `parametized_demo` — Choice Parameter `environment`
 > with choices `test`, `QA`, `Preprod` and Multi-line String Parameter
 > `Mutiline` with a 3-line default value*
- 
-![Choice and Multiline Parameters](build%20environments/choice_and_multiline_parameters.png)
- 
+
+![Choice and Multiline Parameters](build_environments/choice_and_multiline_parameters.png)
+
 Clicked **Save** to apply all parameters.
- 
+
 **Result:** When triggering `parametized_demo` with **Build with
 Parameters**, Jenkins now presents three input fields — a text box for
 `Name`, a dropdown for `environment` (with `test`, `QA`, `Preprod`), and
 a text area for `Mutiline`. Each value is injected as an environment
 variable and available throughout all build steps.
- 
+
 ---
- 
+
 ## 🔑 Key Lessons Learned (Build Environments)
- 
+
 **1. Timestamps Make Debugging Measurable**
- 
+
 Without timestamps, a console log is just a list of lines. With timestamps
 enabled, every line carries the exact time it ran — making it trivial to
 identify which step is slow, how long a build actually took, and where
 time is being lost.
- 
+
 **2. Build Timeouts Protect the Executor**
- 
+
 A hung build without a timeout blocks the Jenkins executor indefinitely,
 preventing all other jobs from running. Setting a timeout with `Fail the
 build` as the action ensures a stuck build is detected, aborted, and
 reported — freeing the executor for the next job.
- 
+
 **3. The Absolute Strategy Enforces a Hard Deadline**
- 
+
 The Absolute timeout strategy terminates a build after a fixed number of
 minutes regardless of what it is doing. Set the timeout generously enough
 to allow normal builds to complete, but short enough to catch genuinely
 stuck ones.
- 
+
 **4. Parameters Eliminate Hardcoded Values**
- 
+
 Every value hardcoded into a job configuration is a value that must be
 manually changed when requirements shift. Parameters move those values to
 trigger time — making the same job reusable across environments, branches,
 or any other dimension that changes between runs.
- 
+
 **5. Choice Parameters Enforce Valid Inputs**
- 
+
 A free-text String Parameter can receive any value, including typos or
 invalid options. A Choice Parameter restricts the input to a predefined
 list — preventing misconfigured builds before they start. Use it whenever
 a field has a known, finite set of valid values.
- 
+
 **6. Multi-line Parameters Handle Complex Inputs**
- 
+
 Some build inputs cannot fit on one line — release notes, lists of
 targets, or multi-step instructions. The Multi-line String Parameter
 accepts a full block of text, keeping the job configuration clean while
 still passing rich data into the build.
- 
+
 ---
 
 ## 🛠️ Tools & Environment
@@ -700,7 +706,7 @@ still passing rich data into the build.
 
 ✅ Build Triggers — Trigger Builds Remotely documented  
 ✅ Variables in Jenkins — Environment Variables and Global Variables documented  
-✅ Build Environments  
+✅ Build Environments — Timestamps, Build Timeout, and Build Parameters documented  
 ⬜ Build Pipeline  
 ⬜ Deploy Artifacts to Tomcat Server  
 ⬜ Deploy Build to Tomcat Server using Jenkins  
