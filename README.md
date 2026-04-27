@@ -36,6 +36,12 @@ Jenkins_mastery/
 │   ├── parametized_job_output.png
 │   ├── timestamp_jenkins.png
 │   ├── timestamp_output.png
+│   ├── retry_count.png
+│   ├── retry_count_output.png
+│   ├── throttle_build-demo.png
+│   ├── concurrent_jobs_build.png
+│   ├── custom_workspace.png
+│   ├── execute_concurrent_jobs.png
 │   └── README.md
 ├── build pipeline/               🔄 Coming Soon
 ├── deploy artifacts to tomcat/   🔄 Coming Soon
@@ -644,6 +650,206 @@ variable and available throughout all build steps.
 
 ---
 
+### Part 4 — Retry Count
+
+The **Retry Count** option tells Jenkins how many times to automatically
+retry a failed SCM (Source Code Management) checkout before giving up and
+marking the build as failed. This is useful when dealing with flaky network
+connections or intermittently unavailable Git repositories.
+
+**Step 1: Create the Job**
+
+Created a new Freestyle job called `retry_counts-demo`:
+
+> Jenkins Dashboard → New Item → Enter name: `retry_counts-demo` → Freestyle Project → OK
+
+**Step 2: Enable Retry Count**
+
+Inside `retry_counts-demo → Configure → General`, clicked **Advanced** to
+expand the hidden options. Checked the option:
+
+> ✅ Retry Count
+
+In the **SCM checkout retry count** field, set the value:
+
+```
+0
+```
+
+> 📸 *Screenshot: `retry_counts-demo` Advanced General settings — Retry
+> Count enabled with SCM checkout retry count set to 0*
+
+![Retry Count](build_environments/retry_count.png)
+
+Clicked **Save** to apply.
+
+**Step 3: Trigger the Build and Observe the Retry**
+
+Clicked **Build Now**. Jenkins attempted to clone the configured Git
+repository. When the checkout failed — because no valid branch revision
+could be found — Jenkins automatically retried the SCM checkout after a
+wait period before ultimately failing the build.
+
+**Console Output for Build #5:**
+
+```
+Started by user Saleem Ahmed
+Running as SYSTEM
+Building in workspace /var/lib/jenkins/workspace/retry_counts-demo
+The recommended git tool is: NONE
+No credentials specified
+> git rev-parse --resolve-git-dir /var/lib/jenkins/workspace/retry_counts-demo/.git
+Fetching changes from the remote Git repository
+> git config remote.origin.url https://github.com/SaleemAhmedAssanFai/Python-Simple-Projects.git
+Fetching upstream changes from https://github.com/SaleemAhmedAssanFai/Python-Simple-Projects.git
+> git --version # timeout=10
+> git --version # 'git version 2.43.0'
+> git fetch --tags --force --progress -- https://github.com/SaleemAhmedAssanFai/Python-Simple-Projects.git
+ERROR: Couldn't find any revision to build. Verify the repository and branch configuration for this job.
+Retrying after 10 seconds
+...
+```
+
+> 📸 *Screenshot: `retry_counts-demo` Build #5 Console Output — SCM
+> checkout fails, Jenkins automatically retries after 10 seconds*
+
+![Retry Count Output](build_environments/retry_count_output.png)
+
+**Result:** Jenkins detected the SCM checkout failure, waited 10 seconds,
+and retried the entire git fetch cycle automatically — without any manual
+intervention. The retry count controls how many times this cycle repeats
+before the build is permanently marked as failed.
+
+---
+
+### Part 5 — Throttle Builds
+
+The **Throttle builds** option limits how many builds of a job can run
+within a given time period. This prevents a job from overwhelming system
+resources or a downstream service by being triggered too frequently —
+for example, by rapid commits or aggressive polling.
+
+**Step 1: Create the Job**
+
+Created a new Freestyle job called `throttle-build-demo`:
+
+> Jenkins Dashboard → New Item → Enter name: `throttle-build-demo` → Freestyle Project → OK
+
+**Step 2: Enable Throttle Builds**
+
+Inside `throttle-build-demo → Configure → General`, checked the option:
+
+> ✅ Throttle builds
+
+This expanded the throttle configuration section:
+
+| Field | Value Set | Description |
+|---|---|---|
+| **Number of builds** | `2` | Maximum number of builds allowed within the time period |
+| **Time period** | `Minute` | The window in which the build limit applies |
+
+Jenkins displayed the calculated rate: **Approximately 30 seconds between
+builds** — meaning no two builds can run closer together than 30 seconds.
+
+> 📸 *Screenshot: `throttle-build-demo` — Throttle builds enabled,
+> Number of builds set to 2, Time period set to Minute*
+
+![Throttle Build Demo](build_environments/throttle_build-demo.png)
+
+Clicked **Save** to apply.
+
+**Result:** With throttling active, if the job is triggered more than
+twice per minute, Jenkins queues the excess builds and releases them
+according to the rate limit — protecting downstream systems from being
+flooded with rapid successive builds.
+
+---
+
+### Part 6 — Execute Concurrent Builds and Use Custom Workspace
+
+#### Execute Concurrent Builds
+
+By default, Jenkins only allows **one build of a job to run at a time**.
+Any new trigger while a build is in progress is queued and waits. The
+**Execute concurrent builds if necessary** option lifts this restriction —
+allowing multiple builds of the same job to run simultaneously on
+available executors.
+
+**Step 1: Create the Job**
+
+Created a new Freestyle job called `concurrent-demo`:
+
+> Jenkins Dashboard → New Item → Enter name: `concurrent-demo` → Freestyle Project → OK
+
+**Step 2: Enable Concurrent Builds**
+
+Inside `concurrent-demo → Configure → General`, checked the option:
+
+> ✅ Execute concurrent builds if necessary
+
+> 📸 *Screenshot: `concurrent-demo` — Execute concurrent builds if
+> necessary checked in General configuration*
+
+![Execute Concurrent Jobs](build_environments/execute_concurrent_jobs.png)
+
+Clicked **Save** to apply.
+
+**Step 3: Trigger Multiple Builds Rapidly**
+
+Clicked **Build Now** several times in quick succession. Jenkins accepted
+all the build requests simultaneously instead of queuing them.
+
+**Result:** The job status page showed builds **#4 through #8** completing
+successfully while build **#9** was shown as **Pending — Waiting for next
+available executor**. This confirmed that concurrent builds were being
+processed simultaneously, limited only by the number of available
+executors on the Jenkins agent.
+
+> 📸 *Screenshot: `concurrent-demo` Status — builds #4–#8 completed,
+> build #9 pending waiting for next available executor*
+
+![Concurrent Jobs Build](build_environments/concurrent_jobs_build.png)
+
+---
+
+#### Use Custom Workspace
+
+By default, Jenkins checks out code and runs build steps inside:
+```
+/var/lib/jenkins/workspace/JOB_NAME
+```
+
+The **Use custom workspace** option overrides this with any directory path
+of your choosing. This is useful when a build tool expects code to be in
+a specific location, or when multiple jobs need to share a common working
+directory.
+
+**Step 3: Enable Use Custom Workspace**
+
+Still inside the Advanced section of `throttle-build-demo → Configure →
+General`, checked the option:
+
+> ✅ Use custom workspace
+
+In the **Directory** field, entered:
+
+```
+/tmp/mycustomizedspace
+```
+
+> 📸 *Screenshot: `throttle-build-demo` Advanced — Use custom workspace
+> enabled with directory set to /tmp/mycustomizedspace*
+
+![Custom Workspace](build_environments/custom_workspace.png)
+
+Clicked **Save** to apply.
+
+**Result:** On the next build, Jenkins used `/tmp/mycustomizedspace` as
+the working directory instead of the default workspace path. All build
+steps, file reads, and file writes happened relative to this custom path.
+
+---
+
 ## 🔑 Key Lessons Learned (Build Environments)
 
 **1. Timestamps Make Debugging Measurable**
@@ -688,6 +894,34 @@ targets, or multi-step instructions. The Multi-line String Parameter
 accepts a full block of text, keeping the job configuration clean while
 still passing rich data into the build.
 
+**7. Retry Count Handles Flaky SCM Connections**
+
+Network issues and intermittent Git host errors can cause a healthy build
+to fail at the checkout stage. Setting a retry count gives Jenkins a
+second (or third) chance to fetch the code before giving up — preventing
+false failures caused by temporary connectivity problems.
+
+**8. Throttle Builds Protect Downstream Systems**
+
+Rapid-fire builds triggered by frequent commits or aggressive polling can
+overwhelm a downstream service, a shared resource, or the Jenkins executor
+itself. Throttling enforces a minimum gap between builds, keeping load
+predictable and controlled.
+
+**9. Concurrent Builds Maximize Executor Utilisation**
+
+When a job takes a long time to run and multiple triggers arrive, queuing
+them sequentially wastes time. Enabling concurrent builds lets Jenkins
+run multiple instances of the same job in parallel — cutting total wait
+time when executors are available.
+
+**10. Custom Workspaces Enable Precise Build Isolation**
+
+The default workspace path is fine for most jobs, but some build tools,
+shared pipelines, or deployment scripts require code to live at a specific
+path. A custom workspace gives you full control over where Jenkins places
+the build files.
+
 ---
 
 ## 🛠️ Tools & Environment
@@ -706,7 +940,7 @@ still passing rich data into the build.
 
 ✅ Build Triggers — Trigger Builds Remotely documented  
 ✅ Variables in Jenkins — Environment Variables and Global Variables documented  
-✅ Build Environments — Timestamps, Build Timeout, and Build Parameters documented  
+✅ Build Environments — Timestamps, Build Timeout, Parameters, Retry Count, Throttle Builds, Concurrent Builds, and Custom Workspace documented  
 ⬜ Build Pipeline  
 ⬜ Deploy Artifacts to Tomcat Server  
 ⬜ Deploy Build to Tomcat Server using Jenkins  
