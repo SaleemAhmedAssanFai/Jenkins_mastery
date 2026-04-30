@@ -43,7 +43,14 @@ Jenkins_mastery/
 │   ├── custom_workspace.png
 │   ├── execute_concurrent_jobs.png
 │   └── README.md
-├── build pipeline/               🔄 Coming Soon
+├── build pipeline/
+│   ├── install-build_pipeline-plugin.png
+│   ├── post-build-actions.png
+│   ├── build_pipeline-view.png
+│   ├── build-pipeline_run.png
+│   ├── continous-delivery.png
+│   ├── parrallel-jobs-in-pipeline.png
+│   └── README.md
 ├── deploy artifacts to tomcat/   🔄 Coming Soon
 ├── deploy build to tomcat/       🔄 Coming Soon
 └── declarative pipeline/         🔄 Coming Soon
@@ -58,7 +65,7 @@ Jenkins_mastery/
 | 1 | [Build Triggers](<./build triggers/README.md>) | ✅ Complete |
 | 2 | [Variables in Jenkins](<./variables in jenkins/README.md>) | ✅ Complete |
 | 3 | [Build Environments](<./build_environments/README.md>) | ✅ Complete |
-| 4 | Build Pipeline | 🔄 Coming Soon |
+| 4 | [Build Pipeline](<./build pipeline/README.md>) | ✅ Complete |
 | 5 | Deploy Artifacts to Tomcat Server | 🔄 Coming Soon |
 | 6 | Deploy Build to Tomcat Server using Jenkins | 🔄 Coming Soon |
 | 7 | Declarative Pipeline | 🔄 Coming Soon |
@@ -924,6 +931,311 @@ the build files.
 
 ---
 
+## 🔄 Build Pipeline
+
+A **Build Pipeline** in Jenkins is a visual representation of a sequence
+of jobs that are chained together — where the successful completion of one
+job automatically triggers the next. Instead of managing individual jobs
+in isolation, a pipeline gives you an end-to-end view of the entire
+delivery process: from build, through test, to deployment.
+
+The **Build Pipeline Plugin** extends Jenkins with a dedicated pipeline
+view that shows each job as a stage card, the flow of execution between
+them with arrows, and real-time build status using colour-coded indicators —
+green for success, yellow for in-progress, and blue/grey for not yet run.
+
+---
+
+### Phase 1 — Install the Required Plugins
+
+The Build Pipeline view requires two plugins that are not bundled with
+Jenkins by default: **Build Pipeline** and **Parameterized Trigger**.
+
+**Step 1: Open Plugin Manager**
+
+From the Jenkins Dashboard, navigated to:
+
+> Manage Jenkins → Plugins → Available plugins
+
+**Step 2: Search and Install**
+
+Searched for and selected the following two plugins:
+
+| Plugin | Purpose |
+|---|---|
+| **Build Pipeline** | Adds the pipeline view and stage card visualisation |
+| **Parameterized Trigger** | Allows upstream jobs to pass parameters to downstream jobs |
+
+Clicked **Install** and waited for the download and installation to complete.
+
+> 📸 *Screenshot: Plugin download progress page — Parameterized Trigger
+> and Build Pipeline both showing ✅ Success*
+
+![Install Build Pipeline Plugin](build%20pipeline/install-build_pipeline-plugin.png)
+
+Both plugins installed successfully without requiring a Jenkins restart.
+The page confirmed that plugin extensions were loaded and ready to use.
+
+---
+
+### Phase 2 — Create the Upstream and Downstream Jobs
+
+A pipeline requires at least two jobs connected by a Post-build Action —
+an **upstream** job that triggers and a **downstream** job that is triggered.
+
+**Step 3: Create the Upstream Job — `project-build`**
+
+Created a new Freestyle job:
+
+> Jenkins Dashboard → New Item → Enter name: `project-build` → Freestyle Project → OK
+
+Under **Build Steps**, added an Execute shell step:
+
+```bash
+echo "Building the project..."
+sleep 10
+echo "Build complete."
+```
+
+**Step 4: Configure the Post-build Action to Chain Jobs**
+
+Inside `project-build → Configure`, scrolled to the **Post-build Actions**
+section and clicked:
+
+> Add post-build action → Build other projects
+
+In the **Projects to build** field, entered the name of the downstream job:
+
+```
+project-deploy
+```
+
+Selected the trigger condition:
+
+> 🔵 Trigger only if build is stable
+
+This ensures `project-deploy` is only triggered when `project-build`
+completes with a SUCCESS status — not if it fails or is unstable.
+
+> 📸 *Screenshot: `project-build` Post-build Actions — Build other projects
+> configured with `project-deploy` as the downstream target, trigger only
+> if build is stable selected*
+
+![Post-build Actions](build%20pipeline/post-build-actions.png)
+
+Clicked **Save** to apply.
+
+**Step 5: Create the Downstream Job — `project-deploy`**
+
+Created a second Freestyle job:
+
+> Jenkins Dashboard → New Item → Enter name: `project-deploy` → Freestyle Project → OK
+
+Under **Build Steps**, added an Execute shell step:
+
+```bash
+echo "Deploying the project..."
+sleep 10
+echo "Deployment complete."
+```
+
+Clicked **Save**.
+
+---
+
+### Phase 3 — Create the Pipeline View
+
+With the jobs created and linked, the next step is to create a dedicated
+pipeline view to visualise the flow.
+
+**Step 6: Create a New View**
+
+From the Jenkins Dashboard, clicked the **+** icon next to the existing
+views (All, etc.) to create a new view:
+
+> Jenkins Dashboard → + (New View) → Enter view name: `myproject1` → Build Pipeline View → OK
+
+**Step 7: Configure the Pipeline View**
+
+Inside the pipeline view configuration, set up the **Pipeline Flow**:
+
+| Field | Value |
+|---|---|
+| **Layout** | `Based on upstream/downstream relationship` |
+| **Select Initial Job** | `project-build` |
+| **Build Cards** | `Standard build card` |
+
+The layout mode derives the pipeline structure automatically from the
+upstream/downstream trigger relationships between jobs — no manual ordering
+required.
+
+> 📸 *Screenshot: Pipeline view Edit View configuration — Pipeline Flow
+> section, layout set to upstream/downstream relationship, initial job
+> set to `project-build`*
+
+![Build Pipeline View](build%20pipeline/build_pipeline-view.png)
+
+Clicked **Save** to apply.
+
+---
+
+### Phase 4 — Run the Pipeline
+
+**Step 8: Trigger the Pipeline**
+
+Inside the `myproject1` pipeline view, clicked the **Run** button.
+Jenkins started `project-build` (Build **#2**).
+
+Upon successful completion of `project-build`, Jenkins automatically
+triggered `project-deploy` — exactly as configured in the Post-build Action.
+
+> 📸 *Screenshot: `myproject1` Build Pipeline view — `project-build` #2
+> shown in green (SUCCESS), arrow pointing to `project-deploy` (cyan/queued)*
+
+![Build Pipeline Run](build%20pipeline/build-pipeline_run.png)
+
+**Result:** The pipeline view showed both stages side by side with a
+directional arrow between them. `project-build` completed in 10 seconds
+and automatically handed off execution to `project-deploy` — the entire
+delivery chain ran without any manual intervention between stages.
+
+---
+
+### Phase 5 — Continuous Delivery Pipeline (Multi-Stage)
+
+To simulate a real-world Continuous Delivery workflow, a three-stage
+pipeline was built using three chained jobs: **test1 → staging → prod**.
+Each stage represents a promotion gate — code only advances to the next
+environment when the current stage succeeds.
+
+**Step 9: Create the Three-Stage Jobs**
+
+Created three Freestyle jobs in sequence:
+
+| Job Name | Role | Triggers |
+|---|---|---|
+| `test1` | First stage — runs tests | Triggers `staging` on success |
+| `staging` | Second stage — staging deployment | Triggers `prod` on success |
+| `prod` | Third stage — production deployment | End of pipeline |
+
+Each job used the same Post-build Action pattern as before:
+
+> Post-build Actions → Build other projects → [next job name] → Trigger only if build is stable
+
+**Step 10: Create the Continuous Delivery View**
+
+Created a new Build Pipeline view called `continuousdelivery` with
+`test1` set as the Initial Job.
+
+**Step 11: Run the Continuous Delivery Pipeline**
+
+Triggered the pipeline from the view. Jenkins executed all three stages
+sequentially — `test1` completed, triggered `staging`, which completed
+and triggered `prod`.
+
+> 📸 *Screenshot: `continuousdelivery` Build Pipeline view — `test1` #1
+> (green, complete), `staging` #1 (green, complete), `prod` #1 (yellow,
+> in-progress with progress bar)*
+
+![Continuous Delivery](build%20pipeline/continous-delivery.png)
+
+**Result:** The three-stage pipeline ran end-to-end. The pipeline view
+showed live status for each stage — green cards for completed stages and
+a yellow progress bar on the active stage. Code flowed automatically from
+test to staging to production with no manual steps between promotions.
+
+---
+
+### Phase 6 — Parallel Jobs in a Pipeline
+
+Jenkins Build Pipeline also supports **parallel execution** — where
+multiple downstream jobs are triggered from a single upstream job at the
+same time. This is useful when two or more independent tasks (such as
+deploying to two separate environments simultaneously) can run in parallel
+without waiting for each other.
+
+**Step 12: Configure a Job to Trigger Multiple Downstreams**
+
+Inside `test1 → Configure → Post-build Actions`, the **Build other projects**
+field was updated to list two downstream jobs separated by a comma:
+
+```
+staging, staging2
+```
+
+With **Trigger only if build is stable** selected, both `staging` and
+`staging2` would be triggered simultaneously whenever `test1` succeeded.
+
+**Step 13: Run the Parallel Pipeline**
+
+Triggered the pipeline from the `continuousdelivery` view. Jenkins
+started `test1`, and upon its success, triggered both `staging` and
+`staging2` at the same time.
+
+> 📸 *Screenshot: `continuousdelivery` Build Pipeline view — `test1` #2
+> (green), branching into `staging` #2 (green) and `staging2` #1 (green)
+> running in parallel, both feeding into `prod` #2 (green, complete)*
+
+![Parallel Jobs in Pipeline](build%20pipeline/parrallel-jobs-in-pipeline.png)
+
+**Result:** The pipeline view rendered the parallel branches clearly —
+`test1` triggering two separate cards (`staging` and `staging2`) side by
+side below the main flow line, both completing before `prod` was triggered.
+This confirmed that Jenkins correctly handled fan-out execution in a
+Build Pipeline view.
+
+---
+
+## 🔑 Key Lessons Learned (Build Pipeline)
+
+**1. The Build Pipeline Plugin Transforms Job Chains into Visible Stages**
+
+Without the plugin, upstream/downstream relationships between jobs are
+invisible — you only know a job triggered another by reading logs. The
+Build Pipeline view makes the entire chain visible at a glance, with
+colour-coded status per stage and directional arrows showing flow.
+
+**2. Post-build Actions Are the Glue Between Pipeline Stages**
+
+The connection between two jobs in a pipeline is always defined in the
+upstream job's **Post-build Actions** section using **Build other projects**.
+There is no special pipeline-level configuration — the view simply reads
+the existing trigger relationships.
+
+**3. "Trigger Only If Build Is Stable" Is the Right Default**
+
+Choosing this option ensures that a failure in any stage stops the pipeline
+from advancing. Code that fails tests does not get deployed to staging.
+Code that fails staging does not reach production. This is the foundation
+of safe, automated delivery.
+
+**4. The Initial Job Anchors the Entire View**
+
+The pipeline view derives its structure by following the trigger chain
+starting from the **Initial Job**. Set this to the very first job in your
+delivery sequence — everything downstream is discovered automatically.
+
+**5. Parallel Branches Maximise Throughput**
+
+When two downstream tasks are independent of each other, there is no
+reason to run them sequentially. Listing multiple jobs in the
+**Build other projects** field (comma-separated) triggers them all at once
+— cutting total pipeline time when executors are available.
+
+**6. Colour Coding Gives Instant Build Health Feedback**
+
+Green = SUCCESS, Yellow = IN PROGRESS, Blue/Grey = NOT YET RUN. A single
+look at the pipeline view tells you exactly where the pipeline stands
+without opening a single job log.
+
+**7. Pipeline Views Are Read-Only Visualisations**
+
+The Build Pipeline view does not change how jobs work — it only visualises
+the upstream/downstream relationships that already exist. You can delete
+the view without affecting any job or trigger configuration.
+
+---
+
 ## 🛠️ Tools & Environment
 
 | Tool | Purpose |
@@ -941,7 +1253,7 @@ the build files.
 ✅ Build Triggers — Trigger Builds Remotely documented  
 ✅ Variables in Jenkins — Environment Variables and Global Variables documented  
 ✅ Build Environments — Timestamps, Build Timeout, Parameters, Retry Count, Throttle Builds, Concurrent Builds, and Custom Workspace documented  
-⬜ Build Pipeline  
+✅ Build Pipeline — Plugin installation, job chaining, pipeline view, continuous delivery, and parallel jobs documented  
 ⬜ Deploy Artifacts to Tomcat Server  
 ⬜ Deploy Build to Tomcat Server using Jenkins  
 ⬜ Declarative Pipeline  
