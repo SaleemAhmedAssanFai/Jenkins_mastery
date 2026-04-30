@@ -51,7 +51,13 @@ Jenkins_mastery/
 │   ├── continous-delivery.png
 │   ├── parrallel-jobs-in-pipeline.png
 │   └── README.md
-├── deploy artifacts to tomcat/   🔄 Coming Soon
+├── deploy artifacts to tomcat/
+│   ├── maven-unit-test.png
+│   ├── build-package.png
+│   ├── package-output.png
+│   ├── tomcat-10-enabled.png
+│   ├── tomcat-server-app.png
+│   └── README.md
 ├── deploy build to tomcat/       🔄 Coming Soon
 └── declarative pipeline/         🔄 Coming Soon
 ```
@@ -66,7 +72,7 @@ Jenkins_mastery/
 | 2 | [Variables in Jenkins](<./variables in jenkins/README.md>) | ✅ Complete |
 | 3 | [Build Environments](<./build_environments/README.md>) | ✅ Complete |
 | 4 | [Build Pipeline](<./build pipeline/README.md>) | ✅ Complete |
-| 5 | Deploy Artifacts to Tomcat Server | 🔄 Coming Soon |
+| 5 | [Deploy Artifacts to Tomcat Server](<./deploy artifacts to tomcat/README.md>) | ✅ Complete |
 | 6 | Deploy Build to Tomcat Server using Jenkins | 🔄 Coming Soon |
 | 7 | Declarative Pipeline | 🔄 Coming Soon |
 
@@ -1236,6 +1242,308 @@ the view without affecting any job or trigger configuration.
 
 ---
 
+## 🚀 Deploy Artifacts to Tomcat Server (Manually)
+
+This section covers the full workflow for building a Spring Boot web application
+into a deployable WAR artifact using Maven, and then manually deploying that
+artifact to a locally running Apache Tomcat 10 server. This is the foundation
+for understanding what Jenkins automates in the next section — here every step
+is performed by hand so the mechanics are fully understood before automation
+is introduced.
+
+**Tech stack used in this lab:**
+
+| Component | Detail |
+|---|---|
+| Application | Spring Boot WAR example (`hello-world-0.0.1-SNAPSHOT`) |
+| Build tool | Apache Maven |
+| Application server | Apache Tomcat 10 |
+| OS | Ubuntu (VirtualBox VM) |
+| Java | OpenJDK 21 |
+
+---
+
+### Phase 1 — Run Maven Unit Tests
+
+Before packaging, always run the test suite to verify that the application
+code is correct. Maven's `test` lifecycle phase compiles the source, resolves
+all test dependencies, and executes every unit test found in the project.
+
+**Step 1: Navigate to the project directory**
+
+```bash
+cd ~/spring-boot-war-example
+```
+
+**Step 2: Run the Maven test phase**
+
+```bash
+mvn test
+```
+
+Maven resolved and downloaded all required dependencies from Maven Central —
+including test framework libraries — then executed the test suite. The output
+confirmed:
+
+```
+[INFO] No tests to run.
+[INFO] BUILD SUCCESS
+[INFO] Total time: 03:12 min
+[INFO] Finished at: 2026-04-27T16:39:15+01:00
+```
+
+> 📸 *Screenshot: Terminal — `mvn test` completing with BUILD SUCCESS,
+> total time 3:12 min, no tests to run in this project*
+
+![Maven Unit Test](deploy%20artifacts%20to%20tomcat/maven-unit-test.png)
+
+**Result:** The test phase passed cleanly. `No tests to run` is expected for
+this skeleton project — in a real application, unit tests would be executed
+and reported here. BUILD SUCCESS confirms the source compiles and all
+dependencies resolve correctly.
+
+---
+
+### Phase 2 — Package the Application into a WAR File
+
+With tests passing, the next step is to package the application into a
+deployable artifact. The `mvn package` command compiles the source, runs
+tests, and then bundles the compiled classes and all dependencies into a
+single WAR (Web Application Archive) file.
+
+**Step 3: Run the Maven package phase**
+
+```bash
+mvn package
+```
+
+Maven downloaded additional packaging dependencies — including Spring Boot's
+repackaging plugin — compiled the source, ran the tests, and then executed
+the repackaging step. The final output confirmed:
+
+```
+[INFO] Replacing main artifact with repackaged archive
+[INFO] BUILD SUCCESS
+[INFO] Total time: 01:24 min
+[INFO] Finished at: 2026-04-27T16:43:14+01:00
+```
+
+> 📸 *Screenshot: Terminal — `mvn package` completing with BUILD SUCCESS,
+> total time 1:24 min, repackaged archive replacing main artifact*
+
+![Build Package](deploy%20artifacts%20to%20tomcat/build-package.png)
+
+**What "Replacing main artifact with repackaged archive" means:**
+Spring Boot's Maven plugin takes the standard WAR produced by Maven and
+replaces it with a **fat WAR** — a WAR that includes all runtime dependencies
+embedded inside it. This makes it fully self-contained and deployable to any
+servlet container without needing external classpath configuration.
+
+---
+
+### Phase 3 — Verify the WAR Artifact in the Target Directory
+
+After a successful `mvn package`, Maven places all build outputs in the
+`target/` directory. Verify the WAR file exists and check its size before
+deploying it.
+
+**Step 4: List the project root and inspect the target directory**
+
+```bash
+ls -ltr
+cd target
+ls -ltr
+```
+
+The project root showed all expected source files — `pom.xml`, `Jenkinsfile`,
+`setup.sh`, `scripts/`, `src/`. The `target/` directory was created at
+`16:43` — matching the package build timestamp.
+
+Inside `target/`, the full listing confirmed:
+
+```
+drwxrwxr-x  3 leem leem      4096 Apr 27 16:38  generated-sources
+drwxrwxr-x  3 leem leem      4096 Apr 27 16:38  maven-status
+drwxrwxr-x  3 leem leem      4096 Apr 27 16:38  classes
+drwxrwxr-x  4 leem leem      4096 Apr 27 16:42  hello-world-0.0.1-SNAPSHOT
+drwxrwxr-x  2 leem leem      4096 Apr 27 16:42  maven-archiver
+-rw-rw-r--  1 leem leem  11081609 Apr 27 16:42  hello-world-0.0.1-SNAPSHOT.war.original
+-rw-rw-r--  1 leem leem  16513838 Apr 27 16:43  hello-world-0.0.1-SNAPSHOT.war
+```
+
+> 📸 *Screenshot: Terminal — `ls -ltr` in project root, then `cd target`
+> and `ls -ltr` showing `hello-world-0.0.1-SNAPSHOT.war` at 16.5 MB*
+
+![Package Output](deploy%20artifacts%20to%20tomcat/package-output.png)
+
+**Key observations from the target directory:**
+
+| File | Size | Meaning |
+|---|---|---|
+| `hello-world-0.0.1-SNAPSHOT.war.original` | 11 MB | The standard Maven WAR (without embedded dependencies) |
+| `hello-world-0.0.1-SNAPSHOT.war` | 16.5 MB | The Spring Boot fat WAR — fully self-contained, ready to deploy |
+
+The fat WAR is ~5 MB larger because Spring Boot embedded all runtime
+dependencies directly into the archive. This is the file that gets deployed
+to Tomcat.
+
+---
+
+### Phase 4 — Verify Apache Tomcat 10 Is Running
+
+Before deploying the WAR, confirm that the Tomcat 10 service is active
+and listening. On Ubuntu, Tomcat runs as a systemd service.
+
+**Step 5: Check the Tomcat 10 service status**
+
+```bash
+systemctl status tomcat10
+```
+
+The output confirmed the service is fully operational:
+
+```
+● tomcat10.service - Apache Tomcat 10 Web Application Server
+     Loaded: loaded (/usr/lib/systemd/system/tomcat10.service; enabled; preset: enabled)
+     Active: active (running) since Mon 2026-04-27 17:24:41 WAT; 3s ago
+   Main PID: 32371 (java)
+     Memory: 121.2M (peak: 121.2M)
+```
+
+The service log confirmed the full Tomcat startup sequence — Catalina
+service starting, Servlet engine initialising, and web application deployment
+beginning.
+
+> 📸 *Screenshot: Terminal — `systemctl status tomcat10` showing
+> `active (running)`, Main PID 32371, memory 121.2M, Catalina starting,
+> Servlet engine starting, web application deploying*
+
+![Tomcat 10 Enabled](deploy%20artifacts%20to%20tomcat/tomcat-10-enabled.png)
+
+**Result:** Tomcat 10 is `active (running)` and fully initialised. The
+`enabled` flag confirms it is configured to start automatically on boot.
+OpenSSL initialised successfully and the Catalina servlet engine is ready
+to serve web applications.
+
+---
+
+### Phase 5 — Deploy the WAR to Tomcat's webapps Directory
+
+Tomcat automatically detects and deploys any WAR file placed in its
+`webapps/` directory. The deployment process is: copy the WAR → Tomcat
+detects it → Tomcat expands it → application is live.
+
+**Step 6: Navigate to Tomcat's webapps directory**
+
+```bash
+cd /var/lib/tomcat10/webapps/
+pwd
+ls -ltr
+```
+
+The webapps directory contained only the default `ROOT` application —
+confirming no custom apps are deployed yet.
+
+**Step 7: Copy the WAR file into webapps as `app.war`**
+
+The WAR was copied using `sudo` (required because the webapps directory
+is owned by root) and renamed to `app.war` — this controls the context
+path the application will be accessible at (`/app`):
+
+```bash
+sudo cp ~/spring-boot-war-example/target/hello-world-0.0.1-SNAPSHOT.war \
+  /var/lib/tomcat10/webapps/app.war
+```
+
+**Step 8: Verify the deployment**
+
+```bash
+ls -ltr
+```
+
+The listing confirmed the WAR was copied and Tomcat immediately began
+expanding it:
+
+```
+drwxr-xr-x  3 root    root         4096 Apr 27 16:58  ROOT
+-rw-r--r--  1 root    root     16513838 Apr 27 17:35  app.war
+drwxr-x---  5 tomcat  tomcat       4096 Apr 27 17:35  app
+```
+
+> 📸 *Screenshot: Terminal — navigating to `/var/lib/tomcat10/webapps`,
+> `sudo cp` copying the WAR as `app.war`, `ls -ltr` confirming `app.war`
+> (16.5 MB) and the expanded `app/` directory owned by tomcat*
+
+![Tomcat Server App](deploy%20artifacts%20to%20tomcat/tomcat-server-app.png)
+
+**What happened automatically:**
+
+| Event | Description |
+|---|---|
+| WAR copied as `app.war` | Sets the application context path to `/app` |
+| `app/` directory created | Tomcat auto-expanded the WAR into a deployment directory |
+| Owner changed to `tomcat:tomcat` | Tomcat took ownership of the expanded application |
+
+**Result:** The Spring Boot WAR was deployed to Tomcat 10 successfully.
+The application is now accessible at `http://localhost:8080/app`. Tomcat
+detected the new WAR, expanded it automatically, and served it —
+with zero Tomcat restart required.
+
+---
+
+## 🔑 Key Lessons Learned (Deploy Artifacts to Tomcat)
+
+**1. Always Run Tests Before Packaging**
+
+`mvn test` and `mvn package` are separate lifecycle phases. Running
+`test` first gives you fast feedback — if tests fail, you know immediately
+without waiting for the full packaging cycle. In automated pipelines,
+a failing test should always block the package step.
+
+**2. Spring Boot Produces Two WAR Files**
+
+After `mvn package`, the `target/` directory contains both
+`*.war.original` (the standard Maven WAR, without embedded dependencies)
+and `*.war` (the Spring Boot fat WAR, with all dependencies embedded).
+Always deploy the larger `*.war` — it is the one that actually runs
+standalone on Tomcat without external classpath setup.
+
+**3. The WAR Filename Sets the Context Path**
+
+When Tomcat deploys `app.war`, the application is accessible at `/app`.
+Deploying as `ROOT.war` would make it accessible at `/` (the root context).
+Choose the filename deliberately — it directly determines the URL path
+your users will hit.
+
+**4. Tomcat Auto-Deploys — No Restart Needed**
+
+Tomcat monitors its `webapps/` directory. Dropping a WAR file in is
+enough — Tomcat detects the new file, expands it, and serves it. The
+`app/` directory appearing alongside `app.war` is proof that auto-deployment
+completed successfully.
+
+**5. `sudo` Is Required for the webapps Directory**
+
+The `/var/lib/tomcat10/webapps/` directory is owned by `root`. Regular
+user `cp` commands fail with a permission error. Always use `sudo cp`
+or add your user to the `tomcat` group when deploying manually.
+
+**6. Check `systemctl status` Before Every Deployment**
+
+Copying a WAR to a stopped Tomcat instance does nothing — the file sits
+inert until Tomcat starts. Always verify `active (running)` before
+deploying. In Jenkins pipelines, a dedicated pre-deployment health-check
+step should confirm Tomcat is up before attempting the copy.
+
+**7. Manual Deployment Is the Foundation for Automation**
+
+Every step performed manually in this lab — test, package, verify, copy —
+maps directly to a Jenkins pipeline stage. Understanding what each command
+does and why makes it straightforward to translate the workflow into a
+`Jenkinsfile` in the next section.
+
+---
+
 ## 🛠️ Tools & Environment
 
 | Tool | Purpose |
@@ -1254,7 +1562,7 @@ the view without affecting any job or trigger configuration.
 ✅ Variables in Jenkins — Environment Variables and Global Variables documented  
 ✅ Build Environments — Timestamps, Build Timeout, Parameters, Retry Count, Throttle Builds, Concurrent Builds, and Custom Workspace documented  
 ✅ Build Pipeline — Plugin installation, job chaining, pipeline view, continuous delivery, and parallel jobs documented  
-⬜ Deploy Artifacts to Tomcat Server  
+✅ Deploy Artifacts to Tomcat Server — Maven test, package, WAR artifact generation, Tomcat setup, and manual deployment documented  
 ⬜ Deploy Build to Tomcat Server using Jenkins  
 ⬜ Declarative Pipeline  
 
