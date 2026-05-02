@@ -58,8 +58,15 @@ Jenkins_mastery/
 │   ├── tomcat-10-enabled.png
 │   ├── tomcat-server-app.png
 │   └── README.md
-├── deploy build to tomcat/       🔄 Coming Soon
-└── declarative pipeline/         🔄 Coming Soon
+└── declarative pipeline/
+│   ├── jenkins_pipeline-syntax.png
+│   ├── running-commands-pipeline-script.png
+│   ├── multiple-stages-jenkins-pipeline-script.png
+│   ├── multiple-pipeline-jenkins-script-output.png
+│   ├── console_output.png
+│   ├── Screenshot_2026-04-30_105010.png
+│   ├── Screenshot_2026-04-30_105141.png
+│   └── README.md
 ```
 
 ---
@@ -73,8 +80,7 @@ Jenkins_mastery/
 | 3 | [Build Environments](<./build_environments/README.md>) | ✅ Complete |
 | 4 | [Build Pipeline](<./build pipeline/README.md>) | ✅ Complete |
 | 5 | [Deploy Artifacts to Tomcat Server](<./deploy artifacts to tomcat/README.md>) | ✅ Complete |
-| 6 | Deploy Build to Tomcat Server using Jenkins | 🔄 Coming Soon |
-| 7 | Declarative Pipeline | 🔄 Coming Soon |
+| 6 | [Declarative Pipeline](<./declarative pipeline/README.md>) | ✅ Complete |
 
 ---
 
@@ -1544,6 +1550,355 @@ does and why makes it straightforward to translate the workflow into a
 
 ---
 
+## 📜 Declarative Pipeline
+
+A **Declarative Pipeline** in Jenkins is a structured way to define an entire
+CI/CD workflow as code — written in Groovy and stored directly in Jenkins or
+in a `Jenkinsfile` in your source repository. Unlike Freestyle jobs where you
+click through a UI to add build steps one at a time, a Declarative Pipeline
+describes the complete pipeline — all its stages, steps, agents, and
+conditions — in a single, version-controlled script.
+
+The Declarative syntax is Jenkins' recommended approach. It enforces a clean,
+readable structure and makes complex pipelines maintainable by anyone on the
+team who can read code.
+
+To create a Pipeline job in Jenkins:
+> **Jenkins Dashboard → New Item → Enter name → Pipeline → OK**
+
+---
+
+### The Anatomy of a Declarative Pipeline
+
+Every Declarative Pipeline follows the same top-level structure:
+
+```groovy
+pipeline {
+    agent any          // Where to run — any available Jenkins agent
+    stages {           // Container for all pipeline stages
+        stage('Name') {  // A named stage — appears in Stage View
+            steps {      // The actual commands to run
+                echo 'Hello'
+            }
+        }
+    }
+}
+```
+
+| Block | Required | Purpose |
+|---|---|---|
+| `pipeline { }` | ✅ Yes | Outer wrapper — every Declarative Pipeline must start with this |
+| `agent any` | ✅ Yes | Tells Jenkins to run on any available executor |
+| `stages { }` | ✅ Yes | Contains all `stage()` blocks |
+| `stage('Name') { }` | ✅ Yes (at least one) | A named unit of work — name appears in Stage View |
+| `steps { }` | ✅ Yes | Contains the actual commands inside a stage |
+
+---
+
+### Part 1 — Create a Pipeline Job and Write a Hello World Script
+
+**Step 1: Create the Pipeline job**
+
+> Jenkins Dashboard → New Item → Enter name: `pipelines-code-example` → Pipeline → OK
+
+**Step 2: Navigate to the Pipeline section**
+
+Inside `pipelines-code-example → Configure`, clicked **Pipeline** in the
+left sidebar. Set the **Definition** dropdown to:
+
+> Pipeline script
+
+This tells Jenkins the pipeline will be written directly in the browser's
+script editor — not pulled from a `Jenkinsfile` in a Git repository.
+
+**Step 3: Write the Hello World pipeline script**
+
+In the **Script** editor, the built-in **Hello World** template was loaded
+from the dropdown in the top-right corner of the script editor. This
+populated the editor with the minimal valid Declarative Pipeline:
+
+```groovy
+pipeline {
+    agent any
+
+    stages {
+        stage('Hello') {
+            steps {
+                echo 'Hello World'
+            }
+        }
+    }
+}
+```
+
+> 📸 *Screenshot: `pipelines-code-example` Configure → Pipeline — Definition
+> set to Pipeline script, Hello World template loaded in the script editor,
+> Use Groovy Sandbox checked*
+
+![Jenkins Pipeline Syntax](declarative%20pipeline/jenkins_pipeline-syntax.png)
+
+**What each line does:**
+
+| Line | Meaning |
+|---|---|
+| `pipeline { }` | Declares this as a Declarative Pipeline |
+| `agent any` | Run on any available Jenkins executor/node |
+| `stages { }` | Wrapper for all stages in the pipeline |
+| `stage('Hello') { }` | A single stage named "Hello" — visible in Stage View |
+| `steps { }` | Contains the commands to run in this stage |
+| `echo 'Hello World'` | Prints "Hello World" to the Console Output |
+
+Clicked **Save** to apply.
+
+---
+
+### Part 2 — Build a Multi-Stage Pipeline with Shell Commands
+
+A single-stage Hello World pipeline demonstrates syntax but doesn't model
+a real CI/CD workflow. In practice, pipelines have multiple sequential stages —
+each representing a distinct phase of the delivery process. This part extends
+the pipeline to four stages and introduces `sh` steps to run real shell
+commands inside stages.
+
+**Step 4: Update the pipeline script to four stages**
+
+Inside `pipelines-code-example → Configure → Pipeline`, replaced the
+Hello World script with the following four-stage Declarative Pipeline:
+
+```groovy
+pipeline {
+    agent any
+
+    stages {
+        stage('Checkout the Project') {
+            steps {
+                sh 'date'
+                sh 'pwd'
+            }
+        }
+        stage('Build the Package') {
+            steps {
+                echo 'Build the Package'
+            }
+        }
+        stage('Deploy the Package to Test Environment') {
+            steps {
+                echo 'Deploy the Package to Test Environment'
+            }
+        }
+        stage('Deploy the Package to Prod Environment') {
+            steps {
+                echo 'Deploy the Package to Prod Environment'
+            }
+        }
+    }
+}
+```
+
+> 📸 *Screenshot: `pipelines-code-example` Configure → Pipeline — four-stage
+> Declarative Pipeline script showing stages: Checkout the Project (with sh steps),
+> Build the Package, Deploy the Package to Test Environment (lines 4–18 visible)*
+
+![Multiple Stages Jenkins Pipeline Script](declarative%20pipeline/multiple-stages-jenkins-pipeline-script.png)
+
+**Breaking down the four stages:**
+
+| Stage | Steps | Models |
+|---|---|---|
+| `Checkout the Project` | `sh 'date'`, `sh 'pwd'` | Source code checkout phase — shell commands run and print system info |
+| `Build the Package` | `echo 'Build the Package'` | Compilation/packaging phase |
+| `Deploy the Package to Test Environment` | `echo 'Deploy...'` | Test environment deployment phase |
+| `Deploy the Package to Prod Environment` | `echo 'Deploy...'` | Production deployment phase |
+
+**The `sh` step vs `echo`:**
+
+- `sh 'command'` — executes a shell command on the Jenkins agent's OS.
+  The command's stdout and stderr appear in the Console Output.
+- `echo 'text'` — a Jenkins pipeline built-in that prints text to the
+  Console Output without invoking a shell.
+
+> 📸 *Screenshot: Same four-stage pipeline script in wider browser view —
+> full Configure page visible with Pipeline section active*
+
+![Running Commands Pipeline Script](declarative%20pipeline/running-commands-pipeline-script.png)
+
+Clicked **Save** to apply.
+
+---
+
+### Part 3 — Run the Pipeline and Read the Stage View
+
+**Step 5: Trigger the pipeline**
+
+Clicked **Build Now** from the `pipelines-code-example` status page.
+Jenkins queued and executed the pipeline, running all four stages sequentially.
+
+**Step 6: Read the Stage View**
+
+After Build **#2** completed, the **Stage View** on the job's status page
+showed all four stages as columns, with their individual execution times
+and a colour-coded result for each build run:
+
+| Stage | Time (Build #2) | Result |
+|---|---|---|
+| Checkout the Project | 629 ms | ✅ Success |
+| Build the Package | 411 ms | ✅ Success |
+| Deploy the Package to Test Environment | 762 ms | ✅ Success |
+| Deploy the Package to Prod Environment | 448 ms | ✅ Success |
+| **Full run time** | **~14 s** | ✅ Overall SUCCESS |
+
+> 📸 *Screenshot: `pipelines-code-example` Status — Stage View showing
+> Build #2 (Apr 30, 10:44) with all four stages in green, average stage
+> times displayed, Builds #1 and #2 both showing ✅ in the sidebar*
+
+![Multiple Pipeline Jenkins Script Output](declarative%20pipeline/Screenshot_2026-04-30_105010.png)
+
+> 📸 *Screenshot: Same Stage View in wider browser — full pipeline job
+> page with sidebar navigation, Stage View grid, and Permalinks section*
+
+![Stage View Wide](declarative%20pipeline/Screenshot_2026-04-30_105141.png)
+
+**Result:** Both builds completed successfully. The Stage View provided an
+at-a-glance health dashboard for every stage — making it immediately clear
+which stage is slowest (Deploy to Test at 762ms) and whether any stage failed.
+Average stage times are shown across the top row, giving a trend baseline
+for future builds.
+
+---
+
+### Part 4 — Read the Console Output
+
+The Console Output provides a line-by-line execution trace of everything
+Jenkins and the pipeline script did during a build. It is the primary
+diagnostic tool when a build fails.
+
+**Step 7: Open the Console Output for Build #3**
+
+Navigated to:
+
+> `pipelines-code-example` → Build #3 → Console Output
+
+The full execution trace for Build **#3**:
+
+```
+Started by user Saleem Ahmed
+[Pipeline] Start of Pipeline
+[Pipeline] node
+Running on Jenkins in /var/lib/jenkins/workspace/pipelines-code-example
+[Pipeline] {
+[Pipeline] stage
+[Pipeline] { (Checkout the Project)
+[Pipeline] sh
++ date
+Thu Apr 30 10:57:24 AM WAT 2026
+[Pipeline] sh
++ pwd
+/var/lib/jenkins/workspace/pipelines-code-example
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] stage
+[Pipeline] { (Build the Package)
+[Pipeline] echo
+Build the Package
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] stage
+[Pipeline] { (Deploy the Package to Test Environment)
+[Pipeline] echo
+Deploy the Package to Test Environment
+[Pipeline] }
+```
+
+> 📸 *Screenshot: Console Output for `pipelines-code-example` Build #3 —
+> full pipeline trace: Start of Pipeline, node allocation, workspace path,
+> sh date outputting Thu Apr 30 10:57:24 AM WAT 2026, sh pwd outputting
+> workspace path, each stage executing in sequence*
+
+![Console Output](declarative%20pipeline/console_output.png)
+
+> 📸 *Screenshot: Same Console Output in wider browser — complete execution
+> log clearly readable with Pipeline step annotations*
+
+![Console Output Wide](declarative%20pipeline/multiple-pipeline-jenkins-script-output.png)
+
+**Reading the Console Output annotations:**
+
+| Annotation | Meaning |
+|---|---|
+| `[Pipeline] Start of Pipeline` | Jenkins begins parsing and executing the Groovy script |
+| `[Pipeline] node` | Jenkins allocates an executor on an available agent node |
+| `Running on Jenkins in /var/lib/...` | Workspace path where the build runs — defaults to job name |
+| `[Pipeline] stage` | Jenkins enters a `stage()` block |
+| `[Pipeline] { (Stage Name) }` | Opening and closing braces of a named stage |
+| `[Pipeline] sh` | A shell step is about to execute |
+| `+ date` | The `+` prefix marks the command being run by `sh` |
+| `Thu Apr 30 10:57:24 AM WAT 2026` | The actual stdout output of the `date` command |
+| `[Pipeline] echo` | A Jenkins `echo` step is executing |
+| `Build the Package` | The text printed by `echo` — no `+` prefix, not a shell command |
+| `[Pipeline] // stage` | Closing of a stage block |
+
+---
+
+## 🔑 Key Lessons Learned (Declarative Pipeline)
+
+**1. Pipeline as Code Makes CI/CD Version-Controllable**
+
+A Declarative Pipeline written in a `Jenkinsfile` can be stored in the same
+Git repository as the application code. Every change to the pipeline is a
+commit — with history, diffs, code review, and rollback. This is fundamentally
+more maintainable than clicking through a Freestyle job UI.
+
+**2. The Four Required Blocks Are Non-Negotiable**
+
+Every valid Declarative Pipeline must have `pipeline { }`, `agent`, `stages { }`,
+and at least one `stage()` with a `steps { }` block. Missing any one of these
+causes the pipeline to fail at parse time before a single command runs.
+
+**3. Stage Names Appear Directly in the Stage View**
+
+Whatever string you pass to `stage('...')` becomes the column header in the
+Stage View UI. Name stages after what they actually do — not generic labels
+like "Stage 1". Good names (`Checkout the Project`, `Build the Package`) make
+the Stage View a self-documenting delivery dashboard.
+
+**4. `sh` Executes Shell Commands — `echo` Does Not**
+
+`sh 'command'` spawns a shell process on the Jenkins agent and runs the command.
+`echo 'text'` is a Jenkins built-in that prints to the log without touching
+the shell. Use `sh` for anything that needs the OS — Maven builds, file copies,
+curl calls. Use `echo` for simple log annotations.
+
+**5. The `+` Prefix in Console Output Marks Shell Commands**
+
+When Jenkins runs `sh 'date'`, the Console Output shows `+ date` (with a `+`)
+before the command's output. This `+` is bash's xtrace notation — it marks
+the command that was executed. Lines without `+` are either Jenkins framework
+annotations or stdout from the command itself.
+
+**6. The Stage View Provides Instant Build Health at a Glance**
+
+Green cells = passed. Red cells = failed. The column shows per-stage timing,
+and the average row at the top tracks trends across runs. A single look at the
+Stage View tells you which stage broke a build and how long each phase is
+taking — without opening a single log file.
+
+**7. `agent any` Means Any Available Executor**
+
+`agent any` tells Jenkins to run the pipeline on whichever executor is free.
+In a multi-node Jenkins setup, this could be a dedicated build agent, a Docker
+container, or a cloud-provisioned VM. For production pipelines, use specific
+`agent { label 'my-label' }` to control exactly where each stage runs.
+
+**8. Pipelines Are Restartable from Any Stage**
+
+The **Restart from Stage** option in the build's left sidebar lets you re-run
+a pipeline starting from any stage that previously passed — without re-running
+the successful earlier stages. This is invaluable when a later stage fails due
+to a transient issue (network timeout, flaky test) and the build steps before
+it were expensive.
+
+---
+
 ## 🛠️ Tools & Environment
 
 | Tool | Purpose |
@@ -1563,8 +1918,7 @@ does and why makes it straightforward to translate the workflow into a
 ✅ Build Environments — Timestamps, Build Timeout, Parameters, Retry Count, Throttle Builds, Concurrent Builds, and Custom Workspace documented  
 ✅ Build Pipeline — Plugin installation, job chaining, pipeline view, continuous delivery, and parallel jobs documented  
 ✅ Deploy Artifacts to Tomcat Server — Maven test, package, WAR artifact generation, Tomcat setup, and manual deployment documented  
-⬜ Deploy Build to Tomcat Server using Jenkins  
-⬜ Declarative Pipeline  
+✅ Declarative Pipeline — Pipeline job creation, Hello World script, multi-stage pipeline, running shell commands, Stage View, and Console Output documented  
 
 ---
 
